@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../theme/app_colors.dart' as theme;
+import '../theme/app_colors.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 
@@ -65,8 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(errorMsg)));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error inesperado: $e")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error inesperado: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -74,198 +73,153 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = const LinearGradient(
-      colors: [
-        theme.AppColors.primaryBlue,
-        theme.AppColors.orange,
-        theme.AppColors.warningYellow,
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(gradient: gradient),
-        child: Stack(
-          children: [
-            // Burbuja decorativa
-            Positioned(
-              top: -60,
-              left: -40,
-              child: Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.15),
+      backgroundColor: const Color(0xFF121212), // Gris oscuro tipo Threads
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Logo minimalista
+                Image.asset(
+                  'assets/images/logo_login.png',
+                  width: 90,
+                  height: 90,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.shield_outlined,
+                        size: 80, color: Colors.white);
+                  },
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: 100,
-              right: -60,
-              child: Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.1),
+                const SizedBox(height: 12),
+                Text(
+                  "AlertaCom",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-            ),
+                const SizedBox(height: 40),
 
-            // Contenido
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+                Form(
+                  key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Logo sin card
-                      Image.asset(
-                        'assets/images/security_illustration.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.shield_outlined,
-                              size: 90, color: Colors.white);
+                      _buildInputField(
+                        controller: _dniController,
+                        label: 'DNI',
+                        icon: Icons.badge_outlined,
+                        keyboardType: TextInputType.number,
+                        maxLength: 8,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Ingresa tu DNI';
+                          }
+                          if (value.length != 8) {
+                            return 'El DNI debe tener 8 dígitos';
+                          }
+                          return null;
                         },
                       ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _passwordController,
+                        label: 'Contraseña',
+                        icon: Icons.lock_outline,
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Ingresa tu contraseña';
+                          }
+                          if (value.length < 6) {
+                            return 'Mínimo 6 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 26),
+
+                      // Botón principal minimalista
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white, // contraste
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                          onPressed: _isLoading ? null : _loginUser,
+                          icon: const Icon(Icons.login_rounded),
+                          label: _isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black,
+                                  ),
+                                )
+                              : const Text("Ingresar",
+                                  style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                       const SizedBox(height: 10),
-                      const Text(
-                        "Alerta Comunitaria",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+
+                      TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Recuperación de contraseña próximamente')),
+                          );
+                        },
+                        child: Text(
+                          "¿Olvidaste tu contraseña?",
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            _buildInputField(
-                              controller: _dniController,
-                              label: 'DNI',
-                              icon: Icons.badge_outlined,
-                              keyboardType: TextInputType.number,
-                              maxLength: 8,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingresa tu DNI';
-                                }
-                                if (value.length != 8) {
-                                  return 'El DNI debe tener 8 dígitos';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInputField(
-                              controller: _passwordController,
-                              label: 'Contraseña',
-                              icon: Icons.lock_outline,
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingresa tu contraseña';
-                                }
-                                if (value.length < 6) {
-                                  return 'Mínimo 6 caracteres';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 26),
-
-                            // Botón principal
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.AppColors.orange,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14)),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
-                                  elevation: 5,
-                                ),
-                                onPressed: _isLoading ? null : _loginUser,
-                                icon: const Icon(Icons.login_rounded),
-                                label: _isLoading
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white),
-                                      )
-                                    : const Text("Ingresar",
-                                        style: TextStyle(fontSize: 17)),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Recuperación de contraseña próximamente')),
-                                );
-                              },
-                              child: const Text(
-                                "¿Olvidaste tu contraseña?",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "¿No tienes cuenta?",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const RegisterScreen()),
-                              );
-                            },
-                            child: const Text(
-                              "Regístrate",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      )
                     ],
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("¿No tienes cuenta?",
+                        style: TextStyle(color: Colors.grey[400])),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Regístrate",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -288,19 +242,18 @@ class _LoginScreenState extends State<LoginScreen> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         counterText: "",
-        prefixIcon: Icon(icon, color: Colors.white),
+        prefixIcon: Icon(icon, color: Colors.grey[400]),
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
+        labelStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.15),
+        fillColor: const Color(0xFF1E1E1E), // gris oscuro para inputs
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white, width: 1.2),
+          borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: Colors.white.withOpacity(0.5), width: 1.0),
+          borderSide: BorderSide(color: Colors.grey[700]!, width: 1),
         ),
       ),
       validator: validator,

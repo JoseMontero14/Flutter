@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../theme/app_colors.dart' as theme;
 import 'package:alerta_com/screens/publicar_alerta_screen.dart';
-import 'profile_screen.dart';
+import 'package:alerta_com/screens/profile_screen.dart';
+import 'package:alerta_com/screens/dashboard_general_screen.dart'; // 👈 nuevo import
+
+import '../theme/app_colors.dart' as theme;
 
 class HomeScreen extends StatefulWidget {
   final String dni;
@@ -19,14 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       PublicarAlertaScreen(dni: widget.dni),
-      // Placeholder de estadísticas
-      Center(
-        child: Text(
-          'Estadísticas próximamente',
-          style: TextStyle(color: theme.AppColors.textLight, fontSize: 18),
-        ),
-      ),
-      // Perfil unificado
+      const DashboardGeneralScreen(), // 👈 agregado
       ProfileScreen(dni: widget.dni),
     ];
 
@@ -42,8 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
           backgroundColor: theme.AppColors.backgroundDark,
-          selectedItemColor: Colors.white, // Color claro para el ítem activo
-          unselectedItemColor: Colors.grey[500], // Ítems inactivos más suaves
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.grey[500],
           selectedIconTheme: const IconThemeData(size: 26),
           unselectedIconTheme: const IconThemeData(size: 24),
           onTap: (index) => setState(() => _currentIndex = index),
@@ -54,9 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Publicar',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_outlined),
-              activeIcon: Icon(Icons.bar_chart),
-              label: 'Estadísticas',
+              icon: Icon(Icons.analytics_outlined),
+              activeIcon: Icon(Icons.analytics),
+              label: 'Dashboard',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

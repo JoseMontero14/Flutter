@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../theme/app_colors.dart' as theme;
 import 'crear_alerta_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PublicarAlertaScreen extends StatefulWidget {
   final String dni;
@@ -132,7 +133,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     final fecha = (alerta['fecha'] as Timestamp?)?.toDate();
     final fechaTxt =
         fecha != null ? "${fecha.day}/${fecha.month}/${fecha.year}" : "";
-    // ahora soportamos lista de imágenes llamada 'imagenesBase64'
     final imagenes = (alerta['imagenesBase64'] ?? []) as List<dynamic>;
     final tieneImgs = imagenes.isNotEmpty;
     final dniUsuario = (alerta['dniUsuario'] ?? "").toString();
@@ -161,7 +161,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Encabezado
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -230,11 +229,8 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-
               Text(textoAlerta,
                   style: const TextStyle(color: Colors.white, fontSize: 14)),
-
-              // --- Aquí mostramos múltiples imágenes en fila horizontal ---
               if (tieneImgs)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
@@ -246,9 +242,7 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
                         final imgBase64 = imagenes[index]?.toString() ?? "";
-                        if (imgBase64.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
+                        if (imgBase64.isEmpty) return const SizedBox.shrink();
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -290,25 +284,48 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                     ),
                   ),
                 ),
-
               const SizedBox(height: 6),
-
+              if (alerta.containsKey('latitud') && alerta.containsKey('longitud')) ...[
+                GestureDetector(
+                  onTap: () async {
+                    final lat = alerta['latitud'];
+                    final lon = alerta['longitud'];
+                    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lon';
+                    final uri = Uri.parse(url);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      debugPrint('No se pudo abrir Google Maps');
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.lightBlueAccent, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Ver ubicación en Google Maps",
+                        style: const TextStyle(
+                          color: Colors.lightBlueAccent,
+                          fontSize: 13,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
               Row(
                 children: [
-                  _buildLikeButton(idAlerta),
+                  _buildLikeButton(idAlerta, dniUsuario), // <-- CORRECCIÓN
                   const SizedBox(width: 16),
                   _buildCommentButton(idAlerta),
                 ],
               ),
-
               const SizedBox(height: 6),
-
               Text(fechaTxt, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-
               const SizedBox(height: 6),
-
               const Divider(color: Color(0xFF2E2E2E), thickness: 1),
-
               _buildCommentsThread(idAlerta),
             ],
           ),
@@ -317,7 +334,7 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     );
   }
 
-  Widget _buildLikeButton(String idAlerta) {
+  Widget _buildLikeButton(String idAlerta, String dniDuenoAlerta) {
     return StreamBuilder<DocumentSnapshot>(
       stream: idAlerta.isNotEmpty
           ? _firestore.collection('alertas').doc(idAlerta).snapshots()
@@ -338,6 +355,17 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                 await alertaRef.update({'likesUsuarios': FieldValue.arrayRemove([widget.dni])});
               } else {
                 await alertaRef.update({'likesUsuarios': FieldValue.arrayUnion([widget.dni])});
+
+                if (dniDuenoAlerta != widget.dni) {
+                  await _firestore.collection('notificaciones').add({
+                    'dniUsuarioDestino': dniDuenoAlerta,
+                    'dniUsuarioOrigen': widget.dni,
+                    'nombreUsuarioOrigen': nombreUsuarioActual,
+                    'tipo': 'like',
+                    'idAlerta': idAlerta,
+                    'fecha': Timestamp.now(),
+                  });
+                }
               }
             } catch (e) {
               print("Error al dar like: $e");
@@ -346,8 +374,7 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
           child: Row(
             children: [
               Icon(Icons.favorite,
-                  size: 16,
-                  color: yaLeGusto ? Colors.red : Colors.white54),
+                  size: 16, color: yaLeGusto ? Colors.red : Colors.white54),
               const SizedBox(width: 4),
               Text(likesCount.toString(),
                   style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -386,7 +413,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     );
   }
 
-  /// 🔹 Hilo de comentarios
   Widget _buildCommentsThread(String idAlerta) {
     return StreamBuilder<QuerySnapshot>(
       stream: idAlerta.isNotEmpty
@@ -468,8 +494,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                             fontSize: 13,
                           ),
                         ),
-
-                        // 🔹 Imagen pequeña y ampliable
                         if (tieneImgComentario)
                           Padding(
                             padding: const EdgeInsets.only(top: 6),
@@ -508,13 +532,12 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
                                 child: Image.memory(
                                   base64Decode(data['imagenBase64'] ?? ""),
                                   fit: BoxFit.contain,
-                                  width: 180, // 🔹 tamaño más pequeño
+                                  width: 180,
                                   height: 120,
                                 ),
                               ),
                             ),
                           ),
-
                         const SizedBox(height: 6),
                         Text(
                           fechaTxtComentario,
@@ -535,7 +558,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     );
   }
 
-  /// 🔹 Modal de comentarios oscuro + subir imagen + miniatura
   void _mostrarComentarios(BuildContext context, String idAlerta) {
     if (idAlerta.isEmpty) return;
     final TextEditingController _controller = TextEditingController();
@@ -689,7 +711,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     );
   }
 
-  /// 🔹 Confirmación de eliminación de alertas
   void _confirmarEliminacion(String idAlerta) {
     showDialog(
       context: context,
@@ -727,7 +748,6 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
     );
   }
 
-  /// 🔹 UI principal
   @override
   Widget build(BuildContext context) {
     return Scaffold(

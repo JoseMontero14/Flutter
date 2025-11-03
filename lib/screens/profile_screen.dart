@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_colors.dart' as theme;
 import 'crear_alerta_screen.dart';
 
@@ -48,13 +49,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             children: [
               GestureDetector(
                 onTap: () async {
-                  // Ver imagen circular completa
                   if (fotoBase64.isNotEmpty) {
                     _verFotoCircularCompleta(fotoBase64);
                   }
                 },
                 onLongPress: () async {
-                  // Cambiar foto
                   final picker = ImagePicker();
                   final pickedFile = await picker.pickImage(
                     source: ImageSource.gallery,
@@ -236,7 +235,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -270,7 +268,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ],
                   ),
                   const SizedBox(height: 8),
-
                   Text(
                     "${_userData?['nombreCompleto'] ?? ''} ${_userData?['apellidos'] ?? ''}",
                     style: const TextStyle(
@@ -284,7 +281,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     style: const TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   const SizedBox(height: 12),
-
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.AppColors.textMuted,
@@ -390,10 +386,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     },
                   ),
 
-                  // DASHBOARD
-                  const Center(
-                    child: Text("Dashboard con gráficos aquí", style: TextStyle(color: Colors.white)),
-                  ),
+                  // ==== DASHBOARD ====
+                  DashboardTab(dni: widget.dni),
 
                   // GALERÍA
                   StreamBuilder<QuerySnapshot>(
@@ -451,6 +445,186 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ===== DASHBOARD TAB =====
+class DashboardTab extends StatefulWidget {
+  final String dni;
+  const DashboardTab({super.key, required this.dni});
+
+  @override
+  State<DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<DashboardTab> {
+  final _firestore = FirebaseFirestore.instance;
+  bool _loading = true;
+  Map<int, int> alertasPorMes = {};
+  Map<String, int> alertasPorTipo = {};
+  int totalAlertas = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final snapshot = await _firestore
+        .collection('alertas')
+        .where('dniUsuario', isEqualTo: widget.dni)
+        .get();
+
+    final now = DateTime.now();
+    Map<int, int> mensual = {for (var i = 1; i <= 12; i++) i: 0};
+    Map<String, int> tipo = {};
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      if (data['fecha'] != null) {
+        final fecha = (data['fecha'] as Timestamp).toDate();
+        mensual[fecha.month] = (mensual[fecha.month] ?? 0) + 1;
+      }
+      final t = (data['tipo'] ?? 'Sin tipo') as String;
+      tipo[t] = (tipo[t] ?? 0) + 1;
+    }
+
+    setState(() {
+      alertasPorMes = mensual;
+      alertasPorTipo = tipo;
+      totalAlertas = snapshot.size;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Resumen de actividad",
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatCard("Total", totalAlertas.toString()),
+              _buildStatCard("Mes actual", "${alertasPorMes[DateTime.now().month] ?? 0}"),
+              _buildStatCard("Tipos", "${alertasPorTipo.length}"),
+            ],
+          ),
+          const SizedBox(height: 30),
+          const Text("Alertas por mes",
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          AspectRatio(
+            aspectRatio: 1.5,
+            child: BarChart(
+              BarChartData(
+                gridData: FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+  show: true,
+  topTitles: AxisTitles(
+    sideTitles: SideTitles(showTitles: false), // 🔸 Oculta los números de arriba
+  ),
+  rightTitles: AxisTitles(
+    sideTitles: SideTitles(showTitles: false), // 🔸 Oculta los números de la derecha
+  ),
+  leftTitles: AxisTitles(
+    sideTitles: SideTitles(
+      showTitles: true,
+      reservedSize: 30,
+      getTitlesWidget: (value, meta) => Text(
+        value.toInt().toString(),
+        style: const TextStyle(color: Colors.white70, fontSize: 12),
+      ),
+    ),
+  ),
+  bottomTitles: AxisTitles(
+    sideTitles: SideTitles(
+      showTitles: true,
+      getTitlesWidget: (value, meta) {
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        final index = value.toInt() - 1;
+        return Text(
+          meses[index >= 0 && index < meses.length ? index : 0],
+          style: const TextStyle(color: Colors.white70, fontSize: 10),
+        );
+      },
+    ),
+  ),
+),
+
+                barGroups: alertasPorMes.entries
+                    .map((e) => BarChartGroupData(
+                          x: e.key,
+                          barRods: [
+                            BarChartRodData(
+                              toY: e.value.toDouble(),
+                              color: theme.AppColors.textMuted,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ],
+                        ))
+                    .toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          const Text("Alertas por tipo",
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          AspectRatio(
+            aspectRatio: 1.2,
+            child: PieChart(
+              PieChartData(
+                sections: alertasPorTipo.entries.map((e) {
+                  final porcentaje =
+                      (e.value / totalAlertas * 100).toStringAsFixed(1);
+                  return PieChartSectionData(
+                    color: Colors.primaries[
+                        e.key.hashCode % Colors.primaries.length].withOpacity(0.8),
+                    value: e.value.toDouble(),
+                    title: "${e.key}\n$porcentaje%",
+                    radius: 60,
+                    titleStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.AppColors.surfaceDark,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
       ),
     );
   }

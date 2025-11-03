@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../theme/app_colors.dart' as theme;
 
 class CrearAlertaScreen extends StatefulWidget {
   final String dni;
   final String? idAlerta;
 
-  const CrearAlertaScreen({Key? key, required this.dni, this.idAlerta}) : super(key: key);
+  const CrearAlertaScreen({Key? key, required this.dni, this.idAlerta})
+      : super(key: key);
 
   @override
   State<CrearAlertaScreen> createState() => _CrearAlertaScreenState();
@@ -19,6 +22,9 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
   String? _tipoSeleccionado;
   List<String> _imagenesBase64 = [];
   bool _isLoading = false;
+  String? _ubicacionTexto;
+  double? _latitud;
+  double? _longitud;
 
   final List<String> tiposDeIncidente = [
     "Incendio",
@@ -33,6 +39,7 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
   void initState() {
     super.initState();
     if (widget.idAlerta != null) _cargarAlerta(widget.idAlerta!);
+    _obtenerUbicacion();
   }
 
   Future<void> _cargarAlerta(String idAlerta) async {
@@ -41,6 +48,9 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
     if (data != null) {
       _textController.text = data['texto'] ?? '';
       _tipoSeleccionado = data['tipo'];
+      _ubicacionTexto = data['ubicacion'];
+      _latitud = data['latitud'];
+      _longitud = data['longitud'];
       final imgs = data['imagenesBase64'];
       if (imgs != null && imgs is List) {
         _imagenesBase64 = List<String>.from(imgs);
@@ -63,8 +73,62 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
       setState(() {
         _imagenesBase64.addAll(nuevasImagenes);
         if (_imagenesBase64.length > 3) {
-          _imagenesBase64 = _imagenesBase64.take(3).toList(); // Máximo 3 imágenes
+          _imagenesBase64 = _imagenesBase64.take(3).toList();
         }
+      });
+    }
+  }
+
+  /// 🔹 Obtener ubicación actual del usuario
+  Future<void> _obtenerUbicacion() async {
+    try {
+      bool servicioHabilitado = await Geolocator.isLocationServiceEnabled();
+      if (!servicioHabilitado) {
+        setState(() {
+          _ubicacionTexto = "Ubicación desactivada";
+        });
+        return;
+      }
+
+      LocationPermission permiso = await Geolocator.checkPermission();
+      if (permiso == LocationPermission.denied) {
+        permiso = await Geolocator.requestPermission();
+        if (permiso == LocationPermission.denied) {
+          setState(() {
+            _ubicacionTexto = "Permiso denegado";
+          });
+          return;
+        }
+      }
+
+      if (permiso == LocationPermission.deniedForever) {
+        setState(() {
+          _ubicacionTexto = "Permiso de ubicación denegado permanentemente";
+        });
+        return;
+      }
+
+      final posicion = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      _latitud = posicion.latitude;
+      _longitud = posicion.longitude;
+
+      // Convertir coordenadas a dirección aproximada
+      final lugares = await placemarkFromCoordinates(_latitud!, _longitud!);
+      if (lugares.isNotEmpty) {
+        final lugar = lugares.first;
+        _ubicacionTexto =
+            "${lugar.locality ?? ''}, ${lugar.subLocality ?? ''}, ${lugar.street ?? ''}";
+      } else {
+        _ubicacionTexto = "Ubicación detectada";
+      }
+
+      setState(() {});
+    } catch (e) {
+      setState(() {
+        _ubicacionTexto = "Error al obtener ubicación";
       });
     }
   }
@@ -74,7 +138,10 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final userSnap = await FirebaseFirestore.instance.collection('usuarios').doc(widget.dni).get();
+      final userSnap = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.dni)
+          .get();
       final nombre = userSnap.data()?['nombreCompleto'] ?? 'Usuario';
 
       final alertaData = {
@@ -84,10 +151,14 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
         'dniUsuario': widget.dni,
         'nombreUsuario': nombre,
         'imagenesBase64': _imagenesBase64,
+        'ubicacion': _ubicacionTexto,
+        'latitud': _latitud,
+        'longitud': _longitud,
       };
 
       if (widget.idAlerta == null) {
-        final docRef = await FirebaseFirestore.instance.collection('alertas').add({
+        final docRef =
+            await FirebaseFirestore.instance.collection('alertas').add({
           ...alertaData,
           'likesUsuarios': [],
           'reposts': 0,
@@ -102,8 +173,8 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al guardar: $e")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error al guardar: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -128,7 +199,8 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
         ),
         title: Text(
           widget.idAlerta == null ? "Nueva Alerta" : "Editar Alerta",
-          style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+              color: Colors.white70, fontWeight: FontWeight.w500),
         ),
       ),
       body: Padding(
@@ -163,25 +235,48 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
                 ),
               ),
               style: const TextStyle(color: Colors.white70),
-              hint: const Text("Selecciona tipo de incidente", style: TextStyle(color: Colors.white54)),
+              hint: const Text("Selecciona tipo de incidente",
+                  style: TextStyle(color: Colors.white54)),
               items: tiposDeIncidente
                   .map((tipo) => DropdownMenuItem(
                         value: tipo,
-                        child: Text(tipo, style: const TextStyle(color: Colors.white70)),
+                        child:
+                            Text(tipo, style: const TextStyle(color: Colors.white70)),
                       ))
                   .toList(),
               onChanged: (val) => setState(() => _tipoSeleccionado = val),
             ),
             const SizedBox(height: 12),
+            if (_ubicacionTexto != null)
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.white70, size: 20),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _ubicacionTexto!,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white54, size: 20),
+                    onPressed: _obtenerUbicacion,
+                  )
+                ],
+              ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 ElevatedButton.icon(
                   onPressed: _seleccionarImagenes,
                   icon: const Icon(Icons.image, color: Colors.white),
-                  label: const Text("Agregar imágenes", style: TextStyle(color: Colors.white)),
+                  label: const Text("Agregar imágenes",
+                      style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E2E2E),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],
@@ -213,7 +308,8 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
                             color: Colors.black54,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close, color: Colors.white, size: 16),
+                          child: const Icon(Icons.close,
+                              color: Colors.white, size: 16),
                         ),
                       ),
                     ],
@@ -232,7 +328,9 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
               ),
               child: Text(
                 _isLoading
-                    ? (widget.idAlerta == null ? "Publicando..." : "Guardando...")
+                    ? (widget.idAlerta == null
+                        ? "Publicando..."
+                        : "Guardando...")
                     : (widget.idAlerta == null ? "Publicar" : "Guardar"),
                 style: const TextStyle(color: Colors.white),
               ),

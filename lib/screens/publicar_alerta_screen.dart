@@ -317,7 +317,7 @@ class _PublicarAlertaScreenState extends State<PublicarAlertaScreen> {
               ],
               Row(
                 children: [
-                  _buildLikeButton(idAlerta, dniUsuario), // <-- CORRECCIÓN
+                  _buildLikeButton(idAlerta, dniUsuario), 
                   const SizedBox(width: 16),
                   _buildCommentButton(idAlerta),
                 ],

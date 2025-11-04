@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Gris oscuro tipo Threads
+      backgroundColor: const Color(0xFF121212), 
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo minimalista
+                
                 Image.asset(
                   'assets/images/logo_login.png',
                   width: 90,
@@ -142,12 +142,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 26),
 
-                      // Botón principal minimalista
+                     
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white, // contraste
+                            backgroundColor: Colors.white, 
                             foregroundColor: Colors.black,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: const Color(0xFF1E1E1E), // gris oscuro para inputs
+        fillColor: const Color(0xFF1E1E1E), 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white, width: 1.5),

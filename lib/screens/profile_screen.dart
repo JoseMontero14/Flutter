@@ -296,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ),
             ),
 
-            // ===== Tabs =====
+            
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.white,
@@ -309,12 +309,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ],
             ),
 
-            // ===== TabBarView =====
+            
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // ALERTAS
+                 
                   StreamBuilder<QuerySnapshot>(
                     stream: _firestore
                         .collection('alertas')
@@ -386,10 +386,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     },
                   ),
 
-                  // ==== DASHBOARD ====
+                 
                   DashboardTab(dni: widget.dni),
 
-                  // GALERÍA
+                  
                   StreamBuilder<QuerySnapshot>(
                     stream: _firestore
                         .collection('alertas')
@@ -450,7 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 }
 
-// ===== DASHBOARD TAB =====
+//particion (dashbaoard personal)
 class DashboardTab extends StatefulWidget {
   final String dni;
   const DashboardTab({super.key, required this.dni});
@@ -534,10 +534,10 @@ class _DashboardTabState extends State<DashboardTab> {
                 titlesData: FlTitlesData(
   show: true,
   topTitles: AxisTitles(
-    sideTitles: SideTitles(showTitles: false), // 🔸 Oculta los números de arriba
+    sideTitles: SideTitles(showTitles: false), 
   ),
   rightTitles: AxisTitles(
-    sideTitles: SideTitles(showTitles: false), // 🔸 Oculta los números de la derecha
+    sideTitles: SideTitles(showTitles: false),
   ),
   leftTitles: AxisTitles(
     sideTitles: SideTitles(

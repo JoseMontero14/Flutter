@@ -79,7 +79,7 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
     }
   }
 
-  /// 🔹 Obtener ubicación actual del usuario
+  ///  aqui obtenemos ubicacion actual (solo del user registrado)
   Future<void> _obtenerUbicacion() async {
     try {
       bool servicioHabilitado = await Geolocator.isLocationServiceEnabled();
@@ -115,7 +115,7 @@ class _CrearAlertaScreenState extends State<CrearAlertaScreen> {
       _latitud = posicion.latitude;
       _longitud = posicion.longitude;
 
-      // Convertir coordenadas a dirección aproximada
+    
       final lugares = await placemarkFromCoordinates(_latitud!, _longitud!);
       if (lugares.isNotEmpty) {
         final lugar = lugares.first;

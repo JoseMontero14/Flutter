@@ -184,7 +184,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
       backgroundColor: theme.AppColors.backgroundColor,
       appBar: AppBar(
   backgroundColor: theme.AppColors.backgroundColor,
-  centerTitle: true, // ✅ centra el texto
+  centerTitle: true, 
   title: const Text(
     'Dashboard General',
     style: TextStyle(
@@ -211,7 +211,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // FILTROS
+                 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -252,7 +252,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // BARRAS POR TIPO
+                  
                   const Text("Alertas por tipo",
                       style: TextStyle(
                           color: Colors.white,
@@ -298,7 +298,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
 
                   const SizedBox(height: 32),
 
-                  // LÍNEAS POR MES
+                 
                   const Text("Tendencia mensual",
                       style: TextStyle(
                           color: Colors.white,
@@ -352,7 +352,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
 
                   const SizedBox(height: 32),
 
-                  // PIE CHART
+                 
                   const Text("Distribución total",
                       style: TextStyle(
                           color: Colors.white,
@@ -374,7 +374,7 @@ class _DashboardGeneralScreenState extends State<DashboardGeneralScreen> {
 
                   const SizedBox(height: 40),
 
-                  // 🗺️ MAPA CON HEATMAP Y POPUPS
+                
                   const Text(
                     "Mapa de alertas en San Juan de Lurigancho",
                     style: TextStyle(

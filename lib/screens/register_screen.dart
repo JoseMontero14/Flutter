@@ -123,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Gris oscuro tipo Threads
+      backgroundColor: const Color(0xFF121212), 
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -133,12 +133,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Icono superior minimalista
+                  
                   Container(
                     width: 70,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E), // gris oscuro inputs
+                      color: const Color(0xFF1E1E1E),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -160,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 32),
 
-                  // DNI + botón Buscar
+                  
                   Row(
                     children: [
                       Expanded(
@@ -231,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Botón principal minimalista
+                  
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
@@ -320,7 +320,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: const Color(0xFF1E1E1E), // gris oscuro inputs
+        fillColor: const Color(0xFF1E1E1E), 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white, width: 1.5),

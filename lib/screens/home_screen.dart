@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alerta_com/screens/publicar_alerta_screen.dart';
 import 'package:alerta_com/screens/profile_screen.dart';
-import 'package:alerta_com/screens/dashboard_general_screen.dart'; // 👈 nuevo import
+import 'package:alerta_com/screens/dashboard_general_screen.dart'; 
 
 import '../theme/app_colors.dart' as theme;
 
@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       PublicarAlertaScreen(dni: widget.dni),
-      const DashboardGeneralScreen(), // 👈 agregado
+      const DashboardGeneralScreen(), 
       ProfileScreen(dni: widget.dni),
     ];
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // ===== Base Colors =====
-  static const Color backgroundLight = Color(0xFFFFFFFF); // Fondo claro (opcional)
+  static const Color backgroundLight = Color(0xFFFFFFFF); // Fondo claro 
   static const Color backgroundDark = Color(0xFF0A0A0A);  // Fondo principal oscuro
   static const Color surfaceLight = Color(0xFFF8F9FA);
   static const Color surfaceDark = Color(0xFF1A1A1A);     // Tarjetas, inputs
@@ -40,5 +40,5 @@ class AppColors {
   static const Color warningColor = warning;
   static const Color textPrimary = textDark;
   static const Color textSecondary = textMuted;
-  static const Color backgroundColor = backgroundDark;  // 🔹 Fondo principal dark
+  static const Color backgroundColor = backgroundDark;  // Fondo principal dark
 }
